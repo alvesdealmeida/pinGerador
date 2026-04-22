@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Gerador de PIN | Educ Games</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060810;
+    --surface: #0d1117;
+    --card: #111827;
+    --border: rgba(255,255,255,0.07);
+    --accent: #4f8eff;
+    --purple: #7c3aed;
+    --success: #10b981;
+    --danger: #ef4444;
+    --text: #e8ecf4;
+    --muted: #475569;
+    --gold: #f59e0b;
+    --admin: #a78bfa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Atmospheric BG */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,58,237,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(79,142,255,0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Animated grid */
+  .grid-bg {
+    position: fixed; inset: 0; pointer-events: none; overflow: hidden;
+  }
+  .grid-bg::before {
+    content: '';
+    position: absolute; inset: -50%;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    animation: gridMove 20s linear infinite;
+  }
+  @keyframes gridMove {
+    to { transform: translateY(40px); }
+  }
+
+  /* ── Admin Badge ── */
+  .admin-badge {
+    position: relative; z-index: 1;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.2);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-size: 0.72rem;
+    color: var(--admin);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+    margin-bottom: 28px;
+  }
+
+  .admin-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--admin);
+    box-shadow: 0 0 8px var(--admin);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.2; }
+  }
+
+  /* ── Title ── */
+  h1 {
+    position: relative; z-index: 1;
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, #fff 30%, var(--admin) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    position: relative; z-index: 1;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 48px;
+    max-width: 340px;
+    line-height: 1.6;
+  }
+
+  /* ── Main Card ── */
+  .admin-card {
+    position: relative; z-index: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  }
+
+  .admin-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 20%; right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.4), transparent);
+  }
+
+  /* ── PIN Display ── */
+  .pin-display-wrap {
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 32px 20px;
+    text-align: center;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+    min-height: 110px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+  }
+
+  .pin-label-sm {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  .pin-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 3.2rem;
+    font-weight: 800;
+    letter-spacing: 0.3em;
+    line-height: 1;
+    background: linear-gradient(135deg, var(--gold) 0%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    transition: all 0.3s ease;
+    min-height: 64px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .pin-number.empty {
+    font-size: 2rem;
+    background: none;
+    -webkit-text-fill-color: var(--muted);
+    color: var(--muted);
+    letter-spacing: 0.4em;
+    opacity: 0.35;
+  }
+
+  .pin-number.animating {
+    animation: flipIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes flipIn {
+    0%   { transform: scale(0.6) rotate(-3deg); opacity: 0; }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  /* Glow behind PIN */
+  .pin-glow {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(245,158,11,0.06), transparent);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+  }
+  .pin-glow.active { opacity: 1; }
+
+  /* ── Validade ── */
+  .validity-bar-wrap {
+    margin-bottom: 28px;
+  }
+
+  .validity-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .validity-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .validity-timer {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--success);
+    transition: color 0.3s;
+  }
+  .validity-timer.warn    { color: var(--gold); }
+  .validity-timer.urgent  { color: var(--danger); animation: timerPulse 0.8s ease-in-out infinite; }
+  .validity-timer.idle    { color: var(--muted); }
+
+  @keyframes timerPulse {
+    0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+
+  .validity-bar-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .validity-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--success);
+    border-radius: 2px;
+    transition: width 1s linear, background 0.5s;
+    transform-origin: left;
+  }
+
+  /* ── Buttons ── */
+  .btn-generate {
+    width: 100%;
+    background: linear-gradient(135deg, var(--purple), #6d28d9);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: 16px;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    margin-bottom: 12px;
+    position: relative; overflow: hidden;
+  }
+  .btn-generate::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    opacity: 0; transition: opacity 0.2s;
+  }
+  .btn-generate:hover::after { opacity: 1; }
+  .btn-generate:hover  { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,58,237,0.4); }
+  .btn-generate:active { transform: scale(0.98); }
+  .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  .btn-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 0;
+  }
+
+  .btn-sec {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    padding: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+  }
+  .btn-sec:hover {
+    background: rgba(255,255,255,0.07);
+    color: var(--text);
+    border-color: rgba(255,255,255,0.12);
+  }
+  .btn-sec.danger:hover {
+    background: rgba(239,68,68,0.08);
+    color: var(--danger);
+    border-color: rgba(239,68,68,0.2);
+  }
+  .btn-sec:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── Divider ── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  /* ── Status log ── */
+  .log-title {
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .log-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 140px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .log-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 0.79rem;
+    color: var(--muted);
+    line-height: 1.4;
+    animation: logSlide 0.3s ease;
+  }
+  @keyframes logSlide {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .log-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .log-dot.gen    { background: var(--admin); }
+  .log-dot.copy   { background: var(--accent); }
+  .log-dot.revoke { background: var(--danger); }
+  .log-dot.expire { background: var(--gold); }
+
+  .log-time {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: rgba(100,116,139,0.6);
+    margin-left: auto; white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 0.82rem;
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.35s;
+    opacity: 0;
+    z-index: 100;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+
+  /* ── Back link ── */
+  .back-link {
+    position: relative; z-index: 1;
+    margin-top: 28px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 6px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text); }
+
+  @media (max-width: 480px) {
+    .admin-card { padding: 28px 20px; }
+    .pin-number { font-size: 2.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="admin-badge">
+  <span class="admin-dot"></span>
+  Painel do Administrador
+</div>
+
+<h1>Gerador de PIN</h1>
+<p class="subtitle">Gere um PIN temporário para liberar o acesso ao Quiz da turma.</p>
+
+<div class="admin-card">
+
+  <!-- Display do PIN -->
+  <div class="pin-display-wrap" id="pin-display-wrap">
+    <div class="pin-glow" id="pin-glow"></div>
+    <div class="pin-label-sm" id="display-label">PIN ATIVO</div>
+    <div class="pin-number empty" id="pin-display">——</div>
+  </div>
+
+  <!-- Barra de validade -->
+  <div class="validity-bar-wrap">
+    <div class="validity-header">
+      <span class="validity-label">⏱ Validade do PIN</span>
+      <span class="validity-timer idle" id="validity-timer">Nenhum PIN ativo</span>
+    </div>
+    <div class="validity-bar-bg">
+      <div class="validity-bar-fill" id="validity-bar" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Botão principal -->
+  <button class="btn-generate" id="btn-generate" onclick="gerarPin()">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <path d="M21 2H3v16h5v4l4-4h5l4-4V2z"/><line x1="9" y1="9" x2="9" y2="13"/><line x1="15" y1="9" x2="15" y2="13"/>
+    </svg>
+    Gerar Novo PIN
+  </button>
+
+  <!-- Botões secundários -->
+  <div class="btn-row">
+    <button class="btn-sec" id="btn-copy" onclick="copiarPin()" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+      Copiar PIN
+    </button>
+    <button class="btn-sec danger" id="btn-revoke" onclick="revogarPin()" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      Revogar PIN
+    </button>
+  </div>
+
+  <hr class="divider">
+
+  <!-- Log -->
+  <div class="log-title">Histórico da sessão</div>
+  <ul class="log-list" id="log-list">
+    <li class="log-item">
+      <span class="log-dot" style="background:var(--muted)"></span>
+      <span>Aguardando ação do administrador...</span>
+    </li>
+  </ul>
+
+</div>
+
+<a href="menu_quiz.html" class="back-link">
+  ← Voltar ao menu dos alunos
+</a>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span id="toast-icon">✅</span>
+  <span id="toast-msg">Copiado!</span>
+</div>
+
+<script>
+  // ── Estado ──────────────────────────────────────────────
+  const PIN_DURACAO   = 10 * 60; // 10 minutos em segundos
+  let timerInterval   = null;
+  let tempoRestante   = 0;
+  let pinAtual        = null;
+
+  // ── Elementos ──────────────────────────────────────────
+  const elDisplay   = document.getElementById('pin-display');
+  const elLabel     = document.getElementById('display-label');
+  const elGlow      = document.getElementById('pin-glow');
+  const elTimer     = document.getElementById('validity-timer');
+  const elBar       = document.getElementById('validity-bar');
+  const elBtnCopy   = document.getElementById('btn-copy');
+  const elBtnRevoke = document.getElementById('btn-revoke');
+  const elLog       = document.getElementById('log-list');
+
+  // ── Gerar PIN ──────────────────────────────────────────
+  function gerarPin() {
+    // Para timer anterior
+    if (timerInterval) clearInterval(timerInterval);
+
+    // Gera PIN de 6 dígitos
+    pinAtual = String(Math.floor(100000 + Math.random() * 900000));
+
+    // Salva no localStorage (compartilhado com o menu)
+    localStorage.setItem('quiz_pin_ativo', pinAtual);
+    localStorage.setItem('quiz_pin_expiry', Date.now() + PIN_DURACAO * 1000);
+
+    // Atualiza display com animação
+    elDisplay.classList.remove('empty', 'animating');
+    void elDisplay.offsetWidth; // reflow
+    elDisplay.classList.add('animating');
+    elDisplay.textContent = pinAtual;
+    elGlow.classList.add('active');
+    elLabel.textContent = 'PIN ATIVO';
+
+    // Habilita botões
+    elBtnCopy.disabled   = false;
+    elBtnRevoke.disabled = false;
+
+    // Inicia contador
+    tempoRestante = PIN_DURACAO;
+    atualizarBarra();
+    timerInterval = setInterval(() => {
+      tempoRestante--;
+      atualizarBarra();
+      if (tempoRestante <= 0) expirarPin();
+    }, 1000);
+
+    // Log
+    addLog('gen', `PIN ${pinAtual} gerado (válido por ${PIN_DURACAO/60} min)`);
+    showToast('🎲', `PIN ${pinAtual} gerado com sucesso!`);
+  }
+
+  // ── Atualizar barra de tempo ────────────────────────────
+  function atualizarBarra() {
+    const pct = (tempoRestante / PIN_DURACAO) * 100;
+    elBar.style.width = pct + '%';
+
+    const mins = Math.floor(tempoRestante / 60);
+    const secs = tempoRestante % 60;
+    const label = `${mins}:${secs.toString().padStart(2,'0')}`;
+
+    elTimer.textContent = label;
+    elTimer.className = 'validity-timer';
+
+    if (tempoRestante > PIN_DURACAO * 0.5) {
+      elBar.style.background = 'var(--success)';
+      elTimer.classList.add('');
+    } else if (tempoRestante > PIN_DURACAO * 0.2) {
+      elBar.style.background = 'var(--gold)';
+      elTimer.classList.add('warn');
+    } else {
+      elBar.style.background = 'var(--danger)';
+      elTimer.classList.add('urgent');
+    }
+  }
+
+  // ── Expirar PIN ────────────────────────────────────────
+  function expirarPin(manual = false) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+
+    localStorage.removeItem('quiz_pin_ativo');
+    localStorage.removeItem('quiz_pin_expiry');
+
+    elDisplay.className = 'pin-number empty';
+    elDisplay.textContent = '——';
+    elLabel.textContent = 'SEM PIN ATIVO';
+    elGlow.classList.remove('active');
+    elBar.style.width = '0%';
+    elTimer.className = 'validity-timer idle';
+    elTimer.textContent = 'Nenhum PIN ativo';
+    elBtnCopy.disabled   = true;
+    elBtnRevoke.disabled = true;
+    pinAtual = null;
+
+    if (!manual) {
+      addLog('expire', 'PIN expirado automaticamente.');
+      showToast('⏰', 'PIN expirado!');
+    }
+  }
+
+  // ── Copiar PIN ─────────────────────────────────────────
+  function copiarPin() {
+    if (!pinAtual) return;
+    navigator.clipboard.writeText(pinAtual).then(() => {
+      addLog('copy', `PIN ${pinAtual} copiado para a área de transferência.`);
+      showToast('📋', 'PIN copiado!');
+    }).catch(() => {
+      // fallback
+      const el = document.createElement('textarea');
+      el.value = pinAtual;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('📋', 'PIN copiado!');
+    });
+  }
+
+  // ── Revogar PIN ────────────────────────────────────────
+  function revogarPin() {
+    if (!pinAtual) return;
+    if (!confirm(`Revogar o PIN ${pinAtual}?\nOs alunos não conseguirão mais acessar o quiz com esse PIN.`)) return;
+    addLog('revoke', `PIN ${pinAtual} revogado manualmente.`);
+    expirarPin(true);
+    showToast('🚫', 'PIN revogado!');
+  }
+
+  // ── Log ────────────────────────────────────────────────
+  function addLog(tipo, texto) {
+    // Remove placeholder se existir
+    const items = elLog.querySelectorAll('li');
+    if (items.length === 1 && items[0].querySelector('.log-dot[style]')) {
+      elLog.innerHTML = '';
+    }
+
+    const agora = new Date();
+    const hora  = agora.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+    const li = document.createElement('li');
+    li.className = 'log-item';
+    li.innerHTML = `
+      <span class="log-dot ${tipo}"></span>
+      <span>${texto}</span>
+      <span class="log-time">${hora}</span>
+    `;
+    elLog.insertBefore(li, elLog.firstChild);
+
+    // Máximo 8 itens
+    while (elLog.children.length > 8) elLog.removeChild(elLog.lastChild);
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  let toastTimeout;
+  function showToast(icon, msg) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = icon;
+    document.getElementById('toast-msg').textContent  = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // ── Init: verifica se já há PIN salvo ──────────────────
+  (function init() {
+    const pinSalvo  = localStorage.getItem('quiz_pin_ativo');
+    const expirySalvo = parseInt(localStorage.getItem('quiz_pin_expiry') || '0');
+    const agora     = Date.now();
+
+    if (pinSalvo && expirySalvo > agora) {
+      pinAtual = pinSalvo;
+      tempoRestante = Math.floor((expirySalvo - agora) / 1000);
+
+      elDisplay.className = 'pin-number animating';
+      elDisplay.textContent = pinAtual;
+      elGlow.classList.add('active');
+      elLabel.textContent = 'PIN ATIVO';
+      elBtnCopy.disabled   = false;
+      elBtnRevoke.disabled = false;
+
+      atualizarBarra();
+      timerInterval = setInterval(() => {
+        tempoRestante--;
+        atualizarBarra();
+        if (tempoRestante <= 0) expirarPin();
+      }, 1000);
+
+      addLog('gen', `PIN ${pinAtual} restaurado da sessão anterior.`);
+    }
+  })();
+</script>
+</body>
+</html>
